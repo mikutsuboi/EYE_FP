@@ -257,6 +257,50 @@ summary_by_cond = (
 
 print("Condition-wise eye metrics (mean ± SD):", summary_by_cond)
 
+per_subj_cond = (
+    data
+    .groupby(['Participant_ID', 'condition'])
+    .agg(
+        n_images=('Image', 'nunique'),         
+        total_fixations=('n_fixations', 'sum'),
+        mean_fix_dur_ms=('mean_fix_dur_ms', 'mean'),  
+        total_dwell_ms=('total_dwell_ms', 'sum'),
+        dispersion_r=('dispersion_r', 'mean'),     
+        scanpath_len_px=('scanpath_len_px', 'sum'),   
+    )
+    .reset_index()
+)
+
+# normalized metrics
+per_subj_cond['fixations_per_image'] = (
+    per_subj_cond['total_fixations'] / per_subj_cond['n_images']
+)
+per_subj_cond['dwell_per_image_ms'] = (
+    per_subj_cond['total_dwell_ms'] / per_subj_cond['n_images']
+)
+per_subj_cond['scanpath_per_image_px'] = (
+    per_subj_cond['scanpath_len_px'] / per_subj_cond['n_images']
+)
+
+print("\nPer-subject × condition (raw + normalized):")
+print(per_subj_cond)
+
+group_cond_norm = (
+    per_subj_cond
+    .groupby('condition')
+    .agg(
+        fixations_per_image_mean=('fixations_per_image', 'mean'),
+        fixations_per_image_sd=('fixations_per_image', 'std'),
+        dwell_per_image_ms_mean=('dwell_per_image_ms', 'mean'),
+        dwell_per_image_ms_sd=('dwell_per_image_ms', 'std'),
+        scanpath_per_image_px_mean=('scanpath_per_image_px', 'mean'),
+        scanpath_per_image_px_sd=('scanpath_per_image_px', 'std'),
+    )
+)
+
+print("\nGroup-level normalized metrics by condition:")
+print(group_cond_norm)
+
 per_subject = (
     data
     .groupby('Participant_ID')
