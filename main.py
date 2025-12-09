@@ -171,6 +171,13 @@ def process_one_participant_beh(participant_id, filepath):
 
     return beh
 
+def get_longest_fixations():
+    # max for all participants for all images
+    # data: 6 participants * 30 images = 180 longest fixations
+    longest_fixations = all_fixations.groupby(['Participant_ID', 'Image']).max('duration_ms')
+
+    return longest_fixations
+
 all_fixations_list = []
 all_behaviour_list = []
 
@@ -493,10 +500,15 @@ print(f"Saved per-subject summary to {per_subject_file}")
 
 # 5. group-level summary (Series -> DataFrame)
 group_summary_file = os.path.join(output_dir, "group_summary.csv")
-group_summary.to_frame(name='value').to_csv(group_summary_file)
+# group_summary.to_frame(name='value').to_csv(group_summary_file)
 print(f"Saved group-level summary to {group_summary_file}")
 
 # 6. condition vs subject
 per_subject_cond_file = os.path.join(output_dir, "per_subject_per_condition_summary.csv")
 per_subject_cond.to_csv(per_subject_cond_file, index=False)
 print(f"Saved per-subject × condition summary to {per_subject_cond_file}")
+
+# 7. longest fixations
+longest_fixations = get_longest_fixations()
+print("\nLongest fixations for every participant on every image")
+print(longest_fixations)
