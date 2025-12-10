@@ -114,10 +114,10 @@ df_clean_mfd  = df[(df['mean_fix_dur_ms_z'] >= -3) & (df['mean_fix_dur_ms_z'] <=
 df_clean_disp = df[(df['dispersion_r_z'] >= -3) & (df['dispersion_r_z'] <= 3)]
 df_clean_longfix = df[(df['longest_fix_ms_z'] >= -3) & (df['longest_fix_ms_z'] <= 3)]
 
-#plot_2_way_anova(df_clean_nfix, 'n_fixations_z')
+plot_2_way_anova(df_clean_nfix, 'n_fixations_z')
 plot_2_way_anova(df_clean_mfd, 'mean_fix_dur_ms_z')
-#plot_2_way_anova(df_clean_disp, 'dispersion_r_z')
-#plot_2_way_anova(df_clean_longfix, 'longest_fix_ms_z')
+plot_2_way_anova(df_clean_disp, 'dispersion_r_z')
+plot_2_way_anova(df_clean_longfix, 'longest_fix_ms_z')
 
 # commented out because in this new version, the stats are computed in the plot_2_way_anova() function
 """
