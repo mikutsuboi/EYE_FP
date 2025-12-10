@@ -5,6 +5,7 @@ import os
 
 STIM_DIR = "stimuli"
 OUT_DIR  = "visualisations" 
+OUT_DIR_HEAT = "heatmaps"
 SCREEN_W = 1920
 SCREEN_H = 1080
 
@@ -456,6 +457,105 @@ per_subject_cond = (
 
 print("Per-subject vs condition summary:")
 print(per_subject_cond)
+
+def visualize_heatmap(fix_df, img_path, out_path, title=""):
+
+    if fix_df.empty:
+        print("No fixations – heatmap not created.")
+        return
+
+    fix_df = fix_df.sort_values("start_time_s")
+
+    img = plt.imread(img_path)
+    img_h, img_w = img.shape[0], img.shape[1]
+
+
+    xs = fix_df["x"] * (img_w / SCREEN_W)
+    ys = fix_df["y"] * (img_h / SCREEN_H)
+
+
+    xs = xs.clip(0, img_w - 1)
+    ys = ys.clip(0, img_h - 1)
+
+
+    heatmap, xedges, yedges = np.histogram2d(
+        ys,
+        xs,
+        bins=[img_h, img_w],     
+        range=[[0, img_h], [0, img_w]]
+    )
+
+
+    try:
+        from scipy.ndimage import gaussian_filter
+        heatmap = gaussian_filter(heatmap, sigma=20)
+    except ImportError:
+
+        pass
+
+
+    if heatmap.max() > 0:
+        heatmap = heatmap / heatmap.max()
+
+    dpi = 100
+    fig = plt.figure(figsize=(img_w / dpi, img_h / dpi), dpi=dpi)
+    ax = fig.add_axes([0, 0, 1, 1])
+
+
+    ax.imshow(img)
+    ax.axis("off")
+
+
+    ax.imshow(
+        heatmap,
+        cmap="jet",
+        alpha=0.6,
+        extent=[0, img_w, img_h, 0]
+    )
+
+
+    if title:
+        ax.set_title(title)
+
+    fig.savefig(out_path, bbox_inches="tight", dpi=dpi)
+    plt.close(fig)
+
+
+
+def generate_heatmap_plots():
+    participants_to_plot = sorted(all_fixations['Participant_ID'].unique())
+
+    for pid in participants_to_plot:
+        beh_p = all_behaviour[all_behaviour['Participant_ID'] == pid].copy()
+        beh_p = beh_p.reset_index(drop=True)
+
+        out_dir_pid = os.path.join(OUT_DIR_HEAT, pid)
+        os.makedirs(out_dir_pid, exist_ok=True)
+
+        for idx, row in beh_p.iterrows():
+            img_key = row['Image']
+            img_file = extract_image_filename(img_key)
+            img_path = os.path.join(STIM_DIR, img_file)
+
+            trial_fix = all_fixations[
+                (all_fixations['Participant_ID'] == pid) &
+                (all_fixations['Image'] == img_key)
+            ].copy()
+
+            if trial_fix.empty:
+                print(f"No fixations for {pid}, trial {idx+1}, image {img_key}")
+                continue
+
+            base_name = f"{pid}_trial-{idx+1:02d}_{os.path.splitext(img_file)[0]}"
+            out_path  = os.path.join(out_dir_pid, base_name + "_heatmap.png")
+
+            title = f"{pid} | trial {idx+1} | {img_file}"
+
+            visualize_heatmap(trial_fix, img_path, out_path, title=title)
+
+    print("Heatmap plots are generated for each participant")
+
+generate_heatmap_plots()
 
 # export
 # 1. per_trial
